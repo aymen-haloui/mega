@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  role      Role     @default(BRANCH_USER)
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  branchId  String? 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isBlocked Boolean  @default(false)
+  notes     String?  // Admin notes about user
+  cancellationCount Int @default(0)
+  noShowCount Int @default(0)
+  lastOrderAt DateTime?
+  
+  // Audit fields
+  createdBy String?
+  updatedBy String?
+}
+
+model Branch {
+  id          String    @id @default(uuid())
+  name        String
+  address     String    @unique
+  lat         Float
+  lng         Float
+  users       User[]
+  menus       Menu[]
+  orders      Order[]
+  branchIngredientAvails BranchIngredientAvailability[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Audit fields
+  createdBy String?
+  updatedBy String?
+}
+
+model Menu {
+  id        String   @id @default(uuid())
+  name      String
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  branchId  String
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Audit fields
+  createdBy String?
+  updatedBy String?
+}
+
+model Dish {
+  id           String    @id @default(uuid())
+  name         String
+  description  String?
+  imageUrl     String?
+  priceCents   Int
+  menu         Menu      @relation(fields: [menuId], references: [id])
+  menuId       String
+  ingredients  DishIngredient[]
+  orderItems   OrderItem[]
+  // Denormalized availability: true if all required ingredients available
+  available    Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Audit fields
+  createdBy String?
+  updatedBy String?
+}
+
+model Ingredient {
+  id        String  @id @default(uuid())
+  name      String  @unique
+  createdAt DateTime @default(now())
+  // Global ingredient registry; branch availability tracked separately
+  branchAvails BranchIngredientAvailability[]
+  dishLinks   DishIngredient[]
+  
+  // Audit fields
+  createdBy String?
+}
+
+model DishIngredient {
+  id           String    @id @default(uuid())
+  dish         Dish      @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dishId       String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  ingredientId String
+  qtyUnit      Float?    // optional quantity for inventory/stock
+  required     Boolean   @default(true)
+  
+  @@unique([dishId, ingredientId])
+}
+
+model BranchIngredientAvailability {
+  id           String   @id @default(uuid())
+  branch       Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branchId     String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  ingredientId String
+  available    Boolean  @default(true) // toggled by branch user
+  updatedAt    DateTime @updatedAt
+  
+  // Audit fields
+  updatedBy String?
+  
+  @@unique([branchId, ingredientId])
+}
+
+model Order {
+  id          String     @id @default(uuid())
+  orderNumber Int        @unique
+  branch      Branch     @relation(fields: [branchId], references: [id])
+  branchId    String
+  userName    String     // they give name+phone only
+  userPhone   String
+  items       OrderItem[]
+  status      OrderStatus @default(PENDING)
+  totalCents  Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  canceled    Boolean     @default(false)
+  cancelReason String?
+  
+  // Audit fields
+  createdBy String?
+  updatedBy String?
+}
+
+model OrderItem {
+  id       String @id @default(uuid())
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  String
+  dish     Dish   @relation(fields: [dishId], references: [id])
+  dishId   String
+  qty      Int
+  priceCents Int
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // CREATE, UPDATE, DELETE, etc.
+  entity    String   // User, Branch, Menu, etc.
+  entityId  String
+  oldValues Json?
+  newValues Json?
+  userId    String?  // Who made the change
+  createdAt DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+}
+
+enum Role {
+  ADMIN
+  BRANCH_USER
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELED
+}
