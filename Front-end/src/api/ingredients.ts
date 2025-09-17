@@ -1,5 +1,5 @@
-import { apiClient } from './index';
-import { CreateIngredientRequest, IngredientAvailabilityResponse } from '../types';
+import { apiClient } from './client';
+import { CreateIngredientRequest, IngredientAvailabilityResponse } from './types';
 
 // Ingredients API
 export const ingredientsAPI = {

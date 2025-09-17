@@ -1,5 +1,5 @@
-import { apiClient } from './index';
-import { CreateMenuRequest, UpdateMenuRequest } from '../types';
+import { apiClient } from './client';
+import { CreateMenuRequest, UpdateMenuRequest } from './types';
 
 // Menus API
 export const menusAPI = {

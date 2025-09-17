@@ -1,7 +1,7 @@
 import io, { Socket } from 'socket.io-client';
 
 // WebSocket configuration
-const WS_URL = process.env.REACT_APP_WS_URL || 'http://localhost:3001';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
 // WebSocket service class
 class WebSocketService {
@@ -101,7 +101,7 @@ class WebSocketService {
   private handleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached');
-      this.emit('reconnect-failed');
+      this.emit('reconnect-failed', null);
       return;
     }
 
@@ -115,7 +115,7 @@ class WebSocketService {
   }
 
   // Emit custom event
-  private emit(event: string, data: any): void {
+  private emit(event: string, data: unknown): void {
     const customEvent = new CustomEvent(event, { detail: data });
     window.dispatchEvent(customEvent);
   }
@@ -141,7 +141,7 @@ export default webSocketService;
 
 // WebSocket event listeners
 export const useWebSocket = () => {
-  const addEventListener = (event: string, callback: (data: any) => void) => {
+  const addEventListener = (event: string, callback: (data: unknown) => void) => {
     const handler = (e: CustomEvent) => callback(e.detail);
     window.addEventListener(event, handler as EventListener);
     
@@ -177,21 +177,21 @@ export const useWebSocketEvents = () => {
 
   return {
     // Order events
-    onNewOrder: (callback: (order: any) => void) => 
+    onNewOrder: (callback: (order: unknown) => void) => 
       ws.addEventListener(WS_EVENTS.NEW_ORDER, callback),
     
-    onOrderStatusUpdate: (callback: (update: any) => void) => 
+    onOrderStatusUpdate: (callback: (update: unknown) => void) => 
       ws.addEventListener(WS_EVENTS.ORDER_STATUS_UPDATE, callback),
     
     // Ingredient events
-    onIngredientAvailabilityUpdate: (callback: (update: any) => void) => 
+    onIngredientAvailabilityUpdate: (callback: (update: unknown) => void) => 
       ws.addEventListener(WS_EVENTS.INGREDIENT_AVAILABILITY_UPDATE, callback),
     
     // System events
-    onSystemNotification: (callback: (notification: any) => void) => 
+    onSystemNotification: (callback: (notification: unknown) => void) => 
       ws.addEventListener(WS_EVENTS.SYSTEM_NOTIFICATION, callback),
     
-    onError: (callback: (error: any) => void) => 
+    onError: (callback: (error: unknown) => void) => 
       ws.addEventListener(WS_EVENTS.ERROR, callback),
     
     onReconnectFailed: (callback: () => void) => 

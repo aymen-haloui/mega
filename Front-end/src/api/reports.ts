@@ -1,5 +1,5 @@
-import { apiClient } from './index';
-import { BranchIncomeParams, FraudUserResponse, OrderExportData, BranchReportData } from '../types';
+import { apiClient } from './client';
+import { BranchIncomeParams, FraudUserResponse, OrderExportData, BranchReportData } from './types';
 
 // Reports API
 export const reportsAPI = {

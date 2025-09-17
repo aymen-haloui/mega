@@ -1,38 +1,197 @@
-import { apiClient } from './index';
-import { CreateDishRequest, UpdateDishRequest } from '../types';
+import { apiClient } from './client';
+import { CreateDishRequest, UpdateDishRequest } from './types';
+import { mockDishes, shouldUseMockData } from './mockData';
 
 // Dishes API
 export const dishesAPI = {
   // Get all dishes
-  getDishes: (params?: { 
+  getDishes: async (params?: { 
     page?: number; 
     limit?: number; 
     menuId?: string; 
     branchId?: string; 
     available?: boolean; 
     search?: string 
-  }): Promise<any> =>
-    apiClient.get('/dishes', { params }),
+  }): Promise<any> => {
+    if (shouldUseMockData()) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Get dishes from localStorage or use default mock data
+      let filteredDishes = mockDishes;
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockDishes');
+        if (stored) {
+          filteredDishes = JSON.parse(stored);
+        }
+      }
+      
+      // Apply filters
+      if (params?.branchId) {
+        filteredDishes = filteredDishes.filter(dish => dish.menu.branchId === params.branchId);
+      }
+      if (params?.available !== undefined) {
+        filteredDishes = filteredDishes.filter(dish => dish.available === params.available);
+      }
+      if (params?.search) {
+        const searchLower = params.search.toLowerCase();
+        filteredDishes = filteredDishes.filter(dish => 
+          dish.name.toLowerCase().includes(searchLower) ||
+          dish.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return { data: filteredDishes };
+    }
+    return apiClient.get('/dishes', { params });
+  },
 
   // Get dish by ID
   getDishById: (id: string): Promise<any> =>
     apiClient.get(`/dishes/${id}`),
 
   // Create new dish
-  createDish: (dishData: CreateDishRequest): Promise<any> =>
-    apiClient.post('/dishes', dishData),
+  createDish: async (dishData: CreateDishRequest): Promise<any> => {
+    if (shouldUseMockData()) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Find the correct branch and menu for the dish
+      const { mockBranches, mockMenus } = await import('./mockData');
+      const targetBranch = mockBranches.find(b => b.id === dishData.menuId) || mockBranches[0];
+      const targetMenu = mockMenus.find(m => m.branchId === targetBranch.id) || mockMenus[0];
+      
+      // Create new dish with mock data
+      const newDish = {
+        id: `dish_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ...dishData,
+        available: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: 'current-user',
+        updatedBy: 'current-user',
+        menu: {
+          id: targetMenu.id,
+          name: targetMenu.name,
+          branchId: targetBranch.id,
+          branch: targetBranch,
+          createdAt: targetMenu.createdAt,
+          updatedAt: targetMenu.updatedAt,
+          createdBy: targetMenu.createdBy,
+          updatedBy: targetMenu.updatedBy,
+        },
+        ingredients: dishData.ingredients?.map(ing => ({
+          ...ing,
+          ingredient: {
+            id: ing.ingredientId,
+            name: `Ingredient ${ing.ingredientId}`,
+            category: 'General',
+            available: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            createdBy: 'system',
+            updatedBy: 'system',
+          }
+        })) || []
+      };
+      
+      // Store in localStorage for persistence
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockDishes');
+        const existingDishes = stored ? JSON.parse(stored) : [];
+        const updatedDishes = [...existingDishes, newDish];
+        localStorage.setItem('mockDishes', JSON.stringify(updatedDishes));
+      }
+      
+      return { data: newDish };
+    }
+    return apiClient.post('/dishes', dishData);
+  },
 
   // Update dish
-  updateDish: (id: string, dishData: UpdateDishRequest): Promise<any> =>
-    apiClient.put(`/dishes/${id}`, dishData),
+  updateDish: async (id: string, dishData: UpdateDishRequest): Promise<any> => {
+    if (shouldUseMockData()) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update dish in localStorage
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockDishes');
+        if (stored) {
+          const existingDishes = JSON.parse(stored);
+          const dishIndex = existingDishes.findIndex((dish: any) => dish.id === id);
+          
+          if (dishIndex !== -1) {
+            // Update the dish
+            const updatedDish = {
+              ...existingDishes[dishIndex],
+              ...dishData,
+              updatedAt: new Date().toISOString(),
+              updatedBy: 'current-user'
+            };
+            
+            existingDishes[dishIndex] = updatedDish;
+            localStorage.setItem('mockDishes', JSON.stringify(existingDishes));
+            
+            return { data: updatedDish };
+          }
+        }
+      }
+      
+      // If not found in localStorage, return the updated data
+      return { data: { id, ...dishData, updatedAt: new Date().toISOString() } };
+    }
+    return apiClient.put(`/dishes/${id}`, dishData);
+  },
 
   // Delete dish
-  deleteDish: (id: string): Promise<{ message: string }> =>
-    apiClient.delete(`/dishes/${id}`),
+  deleteDish: async (id: string): Promise<{ message: string }> => {
+    if (shouldUseMockData()) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Remove dish from localStorage
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockDishes');
+        if (stored) {
+          const existingDishes = JSON.parse(stored);
+          const filteredDishes = existingDishes.filter((dish: any) => dish.id !== id);
+          localStorage.setItem('mockDishes', JSON.stringify(filteredDishes));
+        }
+      }
+      
+      return { message: 'Dish deleted successfully' };
+    }
+    return apiClient.delete(`/dishes/${id}`);
+  },
 
   // Toggle dish availability
-  toggleAvailability: (id: string, available: boolean): Promise<any> =>
-    apiClient.put(`/dishes/${id}/availability`, { available }),
+  toggleAvailability: async (id: string, available: boolean): Promise<any> => {
+    if (shouldUseMockData()) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update dish availability in localStorage
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('mockDishes');
+        if (stored) {
+          const existingDishes = JSON.parse(stored);
+          const dishIndex = existingDishes.findIndex((dish: any) => dish.id === id);
+          
+          if (dishIndex !== -1) {
+            existingDishes[dishIndex].available = available;
+            existingDishes[dishIndex].updatedAt = new Date().toISOString();
+            localStorage.setItem('mockDishes', JSON.stringify(existingDishes));
+            
+            return { data: existingDishes[dishIndex] };
+          }
+        }
+      }
+      
+      return { data: { id, available, updatedAt: new Date().toISOString() } };
+    }
+    return apiClient.put(`/dishes/${id}/availability`, { available });
+  },
 
   // Get dish order history
   getDishOrderHistory: (id: string, params?: { 

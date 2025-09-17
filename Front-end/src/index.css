@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-glow-primary;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-glow-secondary;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-glow-primary;
+  }
+  
+  .card-gradient {
+    @apply bg-card border border-border/50 hover:border-secondary/50 transition-all duration-300 hover:shadow-glow-accent;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+  
+  .glow-accent {
+    @apply shadow-glow-accent;
+  }
+  
+  .animate-underline {
+    @apply relative;
+  }
+  
+  .animate-underline::after {
+    @apply content-[''] absolute left-0 bottom-0 w-0 h-0.5 bg-secondary transition-all duration-300;
+  }
+  
+  .animate-underline:hover::after {
+    @apply w-full;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+  
+  .glass-effect {
+    @apply bg-background/80 backdrop-blur-md border border-border/50;
+  }
+  
+  .sidebar-static {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    z-index: 50 !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    will-change: transform !important;
+  }
+  
+  .main-content {
+    margin-left: 16rem;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .main-content.collapsed {
+    margin-left: 4rem;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

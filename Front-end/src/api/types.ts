@@ -1,4 +1,6 @@
 // API Types and Interfaces
+import { User } from '@/types';
+
 export interface ApiResponse<T = any> {
   data: T;
   message?: string;
@@ -23,7 +25,7 @@ export interface ErrorResponse {
   }>;
 }
 
-// Authentication Types
+// Authentication Types (Updated for Prisma schema)
 export interface LoginRequest {
   phone: string;
   password: string;
@@ -31,14 +33,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    name: string;
-    phone: string;
-    role: 'ADMIN' | 'BRANCH_USER';
-    branchId?: string;
-    branch?: any;
-  };
+  user: User;
 }
 
 export interface CreateUserRequest {
@@ -47,6 +42,11 @@ export interface CreateUserRequest {
   role: 'ADMIN' | 'BRANCH_USER';
   branchId?: string;
   password?: string;
+  isBlocked?: boolean;
+  cancellationCount?: number;
+  noShowCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateUserRequest {
@@ -123,6 +123,7 @@ export interface CreateDishRequest {
   description?: string;
   imageUrl?: string;
   priceCents: number;
+  categoryId?: string;
   menuId: string;
   ingredients: Array<{
     ingredientId: string;
@@ -136,6 +137,7 @@ export interface UpdateDishRequest {
   description?: string;
   imageUrl?: string;
   priceCents?: number;
+  categoryId?: string;
   available?: boolean;
   ingredients?: Array<{
     ingredientId: string;
@@ -144,14 +146,15 @@ export interface UpdateDishRequest {
   }>;
 }
 
-// Order Types
+// Order Types (Updated for Prisma schema - no client accounts)
 export interface CreateOrderRequest {
   branchId: string;
-  userName: string;
-  userPhone: string;
+  userName: string; // Client name (no account needed)
+  userPhone: string; // Client phone (no account needed)
   items: Array<{
     dishId: string;
     qty: number;
+    priceCents: number;
   }>;
 }
 
@@ -163,7 +166,8 @@ export interface UpdateOrderStatusRequest {
 export interface OrderSearchParams {
   branchId?: string;
   status?: 'PENDING' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'COMPLETED' | 'CANCELED';
-  userPhone?: string;
+  userPhone?: string; // Search by client phone (no user accounts)
+  userName?: string; // Search by client name (no user accounts)
   startDate?: string;
   endDate?: string;
   page?: number;

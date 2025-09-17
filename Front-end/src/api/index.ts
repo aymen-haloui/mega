@@ -1,5 +1,5 @@
 // Main API Export File
-export { apiClient, default as api } from './index';
+export { apiClient, default as api } from './client';
 export * from './auth';
 export * from './users';
 export * from './branches';
@@ -8,7 +8,6 @@ export * from './dishes';
 export * from './orders';
 export * from './ingredients';
 export * from './reports';
-export * from './websocket';
 export * from './types';
 export * from './constants';
 
